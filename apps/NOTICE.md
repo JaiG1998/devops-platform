@@ -11,7 +11,7 @@ See [LICENSE](./LICENSE) for the full text.
   [38e7348eb289eb5b87c0c6e8cb19ced0449dc389](https://github.com/GoogleCloudPlatform/microservices-demo/tree/38e7348eb289eb5b87c0c6e8cb19ced0449dc389)
 - **Imported on:** 2026-10-13
 - **What was imported:** the `src/` service directories and
-  `kubernetes-manifests/` (the latter now lives in `k8s/base/`).
+  `kubernetes-manifests/` (the latter now lives in `k8s/base/`), add `release/kubernetes-manifests.yaml` (now in k8s/upstream-release/).
 - **Not imported:** upstream Terraform, Istio, Kustomize, and other
   deployment tooling. Infrastructure and delivery in this repository
   are written independently.
