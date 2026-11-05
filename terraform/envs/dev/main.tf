@@ -2,10 +2,18 @@ provider "aws" {
   region = "us-east-1"
 }
 
-module "dev_app" {
-  source       = "../../modules/app_workload"
-  environment  = "dev"
-  instance_type = "t3.nano"  # Smaller instance for dev
-  project = "devops-platform"
-  ami_id       = "ami-0c230065b91270bc6"
+module "vpc_dev" {
+  source = "../../modules/vpc"
+
+  name               = "dev-cluster"
+  vpc_cidr           = "10.10.0.0/16"
+  az_count           = 2
+  single_nat_gateway = true
+  cluster_name       = "dev-eks-cluster"
+
+  tags = {
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+    Project     = "devops-platform"
+  }
 }
