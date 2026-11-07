@@ -12,3 +12,6 @@ add a line to the index below in the same PR.
 | ADR | Title | Status |
 |---|---|---|
 | [0001](0001-core-tooling-choices.md) | Core tooling choices (Terraform, EKS, GitHub Actions) | Accepted |
+| [0002](0002-state-file-locking-choices.md) | Terraform state Locking choices (Terraform, EKS, GitHub Actions) | Accepted |
+| [0003](0003-vpc-architecture-subnet-planning.md) | VPC Architecture and Subnet Planning (Terraform, EKS, GitHub Actions) | Accepted |
+| [0004](0004-eks-architecture.md) | EKS Architecture (Terraform, EKS, GitHub Actions) | Accepted |
