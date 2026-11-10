@@ -23,6 +23,17 @@ variable "kubernetes_version" {
 
 # --- Network Integrations ---
 
+# tflint-ignore: terraform_unused_declarations
+variable "vpc_id" {
+  description = "ID of the VPC where the cluster and node security groups will be created."
+  type        = string
+
+  validation {
+    condition     = can(regex("^vpc-[a-f0-9]+$", var.vpc_id))
+    error_message = "vpc_id must be a valid AWS VPC identifier starting with 'vpc-'."
+  }
+}
+
 variable "private_subnet_ids" {
   description = "List of private subnet IDs where EKS worker nodes and pods will be provisioned."
   type        = list(string)
