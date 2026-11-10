@@ -36,10 +36,6 @@ resource "aws_eks_addon" "kube_proxy" {
 
 # --- 2. IAM OIDC Provider for IRSA (IAM Roles for Service Accounts) ---
 
-# Extract the OIDC issuer host from the EKS cluster attribute (stripping the leading 'https://')
-locals {
-  oidc_issuer_url = replace(aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")
-}
 
 # Fetch the TLS certificate from the cluster's OIDC issuer to compute the root CA thumbprint automatically
 data "tls_certificate" "cluster" {

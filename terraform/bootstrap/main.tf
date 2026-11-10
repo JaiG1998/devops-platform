@@ -61,7 +61,7 @@ resource "aws_s3_bucket_policy" "deny_non_tls_requests" {
         Principal = "*"
         Action    = "s3:*"
         Resource = [
-          "${aws_s3_bucket.state.arn}",
+          aws_s3_bucket.state.arn,
           "${aws_s3_bucket.state.arn}/*"
         ]
         Condition = {
