@@ -11,6 +11,7 @@ on:
 
 # 2. Top-level permissions: Default to read-only for maximum security
 permissions:
+  id-token: write  
   contents: read
 
 # 3. Concurrency: Cancel in-progress runs when a new commit is pushed to the same PR
