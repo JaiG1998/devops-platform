@@ -24,9 +24,9 @@ resource "aws_eks_node_group" "this" {
 
   # Node labels for workload scheduling and organization
   labels = {
-    "Environment"   = "dev"
-    "CapacityType"  = lower(var.node_capacity_type)
-    "WorkloadType"  = "general"
+    "Environment"  = "dev"
+    "CapacityType" = lower(var.node_capacity_type)
+    "WorkloadType" = "general"
   }
 
   # Explicit depends_on to ensure IAM role attachments are fully active before node launch
