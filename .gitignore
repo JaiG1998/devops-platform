@@ -1,7 +1,18 @@
-# Terraform local state and cache directories
+# Local Terraform directories and caches
+.terraform/
+.terraform.lock.hcl # (Note: Keep commented out if you want to track lock files as requested)
+
+# Terraform state files
 *.tfstate
 *.tfstate.*
-*.tfstate.backup
-.terraform/
-.terraform.lock.hcl
+
+# Crash logs and temporary execution files
+crash.log
+*.log
+
+# Saved binary and text plan files
+*.tfplan
+*.tfplan.binary
+
+# Backend configuration files
 backend.hcl

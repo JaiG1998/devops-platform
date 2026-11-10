@@ -1,0 +1,247 @@
+name: "Terraform CI"
+
+# 1. Triggers: Run on PRs touching Terraform files or this workflow itself
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-ci.yml'
+
+# 2. Top-level permissions: Default to read-only for maximum security
+permissions:
+  contents: read
+
+# 3. Concurrency: Cancel in-progress runs when a new commit is pushed to the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # --- Job 1: Terraform Format Check ---
+  fmt:
+    name: "Terraform Format"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+
+  # --- Job 2: Terraform Syntax Validation ---
+  validate:
+    name: "Terraform Validate"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Validate All Modules and Environments
+        run: |
+          echo "Finding all root modules and environment directories..."
+          find terraform -name "*.tf" -exec dirname {} \; | sort -u | while read -r dir; do
+            echo "--------------------------------------------------"
+            echo "Validating directory: $dir"
+            echo "--------------------------------------------------"
+            cd "$dir"
+            terraform init -backend=false
+            terraform validate
+            cd - > /dev/null
+          done
+
+
+  # --- Job 3: TFlint Static Analysis ---
+  tflint:
+    name: "TFlint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup TFlint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: Init TFlint Plugins
+        run: tflint --init
+        working-directory: ./terraform/envs/dev
+
+      - name: Run TFlint Recursively
+        run: tflint --recursive
+
+
+  # --- Job 4: Checkov Security Scan & SARIF Upload ---
+  checkov:
+    name: "Checkov Security Scan"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Security tab integration requires write access to security-events
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Checkov Scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+          soft_fail: true # Set to true initially to avoid blocking PRs during setup
+
+      - name: Upload SARIF file to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # Upload results even if Checkov fails
+        with:
+          sarif_file: results.sarif
+
+
+  # --- Job 5: Terraform Plan Preview ---
+  plan:
+    name: "Terraform Plan"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [fmt, validate, tflint, checkov]
+
+    # Required permissions for OIDC token generation, repository reading, and posting PR comments
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    defaults:
+      run:
+        working-directory: ./terraform/envs/dev
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      # Authenticate via OIDC (No long-lived access keys)
+      - name: Authenticate to AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Terraform Init & Plan
+        id: terraform_plan
+        run: |
+          terraform init -input=false
+
+          # Run plan with detailed exitcode:
+          # 0 = Success, no changes; 2 = Success, syntax/changes exist; 1 = Error
+          set +e
+          terraform plan -input=false -no-color -detailed-exitcode -out=tfplan
+          EXIT_CODE=$?
+          set -e
+
+          if [ $EXIT_CODE -eq 1 ]; then
+            echo "Terraform plan failed with an error."
+            exit 1
+          elif [ $EXIT_CODE -eq 2 ]; then
+            echo "Changes detected in infrastructure."
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "No infrastructure changes detected."
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Capture the plan output as human-readable text for artifact upload and PR comment
+          terraform show -no-color tfplan > tfplan.txt
+
+      - name: Upload Plan Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-dev
+          path: |
+            terraform/envs/dev/tfplan
+            terraform/envs/dev/tfplan.txt
+          retention-days: 1
+
+      - name: Post Plan to Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            let planOutput = "";
+            try {
+              planOutput = fs.readFileSync('./terraform/envs/dev/tfplan.txt', 'utf8');
+            } catch (e) {
+              planOutput = "Plan output file could not be read: " + e.message;
+            }
+
+            if (planOutput.length > 60000) {
+              planOutput = planOutput.substring(0, 60000) + "\n\n...[Plan truncated due to size limits]...";
+            }
+
+            const hasChanges = "${{ steps.terraform_plan.outputs.has_changes }}" === "true";
+            const status = hasChanges ? 'Changes Detected ⚠️' : 'No Changes ✅';
+
+            const output = `#### Terraform Plan (Dev Environment) 📖 \`${status}\`
+
+            <details><summary>Show Plan Output</summary>
+
+            \`\`\`hcl
+            ${planOutput}
+            \`\`\`
+            </details>
+
+            *Pushed by: @${context.actor}, Action: \`${context.eventName}\`*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('Terraform Plan (Dev Environment)')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                comment_id: botComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              });
+            }
