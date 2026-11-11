@@ -1,0 +1,16 @@
+# .gitleaks.toml
+title = "Gitleaks Custom Security Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Narrowly scoped allowlist for verified false positives"
+paths = [
+    # Example of a specific test fixture file, rather than an entire directory or file type
+    '''tests/fixtures/sample_public_cert\.pem$'''
+]
+regexes = [
+    # Example of a documented public placeholder value used strictly in documentation
+    '''placeholder_example_api_key_for_docs'''
+]

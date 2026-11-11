@@ -1,0 +1,35 @@
+# .github/workflows/gitleaks.yaml
+name: Secret Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Gitleaks Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Full History
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # Required for complete historical scanning across all commits
+
+      - name: Run Gitleaks Binary Directly
+        run: |
+          # Download and run pinned Gitleaks binary v8.18.2 directly to ensure parity with local checks
+          GITLEAKS_VERSION="8.18.2"
+          wget https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -O gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz
+          chmod +x gitleaks
+          
+          # Execute scan and fail if secrets are found; redact secrets from output logs
+          ./gitleaks git --log-opts="--all" --redact --verbose || exit 1
