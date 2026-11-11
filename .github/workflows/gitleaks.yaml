@@ -23,13 +23,12 @@ jobs:
         with:
           fetch-depth: 0 # Required for complete historical scanning across all commits
 
-      - name: Run Gitleaks Binary Directly
+      - name: Run Pinned Gitleaks Binary
         run: |
-          # Download and run pinned Gitleaks binary v8.18.2 directly to ensure parity with local checks
           GITLEAKS_VERSION="8.18.2"
           wget https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz -O gitleaks.tar.gz
           tar -xzf gitleaks.tar.gz
           chmod +x gitleaks
           
-          # Execute scan and fail if secrets are found; redact secrets from output logs
-          ./gitleaks git --log-opts="--all" --redact --verbose || exit 1
+          # Execute historical git scan safely with redaction enabled
+          ./gitleaks git --log-opts="--all" --redact --verbose
