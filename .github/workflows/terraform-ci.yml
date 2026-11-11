@@ -116,7 +116,7 @@ jobs:
           soft_fail: true # Set to true initially to avoid blocking PRs during setup
 
       - name: Upload SARIF file to GitHub Security Tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always() # Upload results even if Checkov fails
         with:
           sarif_file: results.sarif
