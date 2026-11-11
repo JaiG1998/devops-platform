@@ -23,6 +23,7 @@ variable "kubernetes_version" {
 
 # --- Network Integrations ---
 
+# tflint-ignore: terraform_unused_declarations
 variable "vpc_id" {
   description = "ID of the VPC where the cluster and node security groups will be created."
   type        = string
