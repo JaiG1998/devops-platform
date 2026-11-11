@@ -159,7 +159,11 @@ jobs:
       - name: Terraform Init & Plan
         id: terraform_plan
         run: |
-          terraform init -input=false
+          terraform init \
+            -input=false \
+            -backend-config="bucket=devops-platform-tfstate-829182232272-bootstrap-bucket" \
+            -backend-config="key=dev/terraform.tfstate" \
+            -backend-config="region=us-east-1"
 
           # Run plan with detailed exitcode:
           # 0 = Success, no changes; 2 = Success, syntax/changes exist; 1 = Error
