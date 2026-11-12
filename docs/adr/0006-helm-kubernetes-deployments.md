@@ -1,8 +1,8 @@
-# ADR-0001: Use Helm for Online Boutique Kubernetes Deployments
+# ADR-0006: Use Helm for Online Boutique Kubernetes Deployments
 
 - **Status:** Accepted
 - **Date:** 2026-11-12
-- **Deciders:** Platform Engineering Team, Architecture Review Board
+- **Deciders:** Jai Gupta
 
 ## Context
 
