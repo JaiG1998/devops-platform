@@ -1,0 +1,131 @@
+{{- range $name, $service := .Values.services }}
+{{- if $service.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "online-boutique.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $name }}
+  template:
+    metadata:
+      labels:
+        {{- include "online-boutique.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $name }}
+    spec:
+      serviceAccountName: {{ $.Release.Name }}-sa
+      containers:
+        - name: {{ $name }}
+          image: "{{ default $.Values.global.imageRegistry $service.image.registry }}/{{ $service.image.repository }}:{{ default $.Values.global.defaultTag $service.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ $service.port }}
+              name: http
+          {{- with $service.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $service.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $service.probes }}
+          {{- if .startup }}
+          startupProbe:
+            {{- if eq $name "frontend" }}
+            httpGet:
+              path: /
+              port: {{ $service.port }}
+            {{- else if eq $name "redis" }}
+            tcpSocket:
+              port: {{ $service.port }}
+            {{- else }}
+            grpc:
+              port: {{ $service.port }}
+            {{- end }}
+            initialDelaySeconds: {{ .startup.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .startup.periodSeconds | default 5 }}
+            failureThreshold: {{ .startup.failureThreshold | default 30 }}
+            timeoutSeconds: {{ .startup.timeoutSeconds | default 1 }}
+          {{- end }}
+          {{- if .liveness }}
+          livenessProbe:
+            {{- if eq $name "frontend" }}
+            httpGet:
+              path: /
+              port: {{ $service.port }}
+            {{- else if eq $name "redis" }}
+            tcpSocket:
+              port: {{ $service.port }}
+            {{- else }}
+            grpc:
+              port: {{ $service.port }}
+            {{- end }}
+            initialDelaySeconds: {{ .liveness.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .liveness.periodSeconds | default 10 }}
+            failureThreshold: {{ .liveness.failureThreshold | default 3 }}
+            timeoutSeconds: {{ .liveness.timeoutSeconds | default 1 }}
+          {{- end }}
+          {{- if .readiness }}
+          readinessProbe:
+            {{- if eq $name "frontend" }}
+            httpGet:
+              path: /
+              port: {{ $service.port }}
+            {{- else if eq $name "redis" }}
+            tcpSocket:
+              port: {{ $service.port }}
+            {{- else }}
+            grpc:
+              port: {{ $service.port }}
+            {{- end }}
+            initialDelaySeconds: {{ .readiness.initialDelaySeconds | default 10 }}
+            periodSeconds: {{ .readiness.periodSeconds | default 10 }}
+            failureThreshold: {{ .readiness.failureThreshold | default 3 }}
+            timeoutSeconds: {{ .readiness.timeoutSeconds | default 1 }}
+          {{- end }}
+          {{- end }}
+---
+{{- end }}
+{{- end }}
+
+{{/* Optional Load Generator Deployment */}}
+{{- if .Values.loadgenerator.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+  labels:
+    {{- include "online-boutique.labels" . | nindent 4 }}
+    app.kubernetes.io/component: loadgenerator
+spec:
+  replicas: {{ .Values.loadgenerator.replicas }}
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: loadgenerator
+  template:
+    metadata:
+      labels:
+        {{- include "online-boutique.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: loadgenerator
+    spec:
+      containers:
+        - name: loadgenerator
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.loadgenerator.image.repository }}:{{ default .Values.global.defaultTag .Values.loadgenerator.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: FRONTEND_ADDR
+              value: "frontend:8080"
+            - name: USERS
+              value: "10"
+          resources:
+            {{- toYaml .Values.loadgenerator.resources | nindent 12 }}
+{{- end }}

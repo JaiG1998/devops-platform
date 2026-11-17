@@ -1,0 +1,13 @@
+# k8s/charts/online-boutique/Chart.yaml
+apiVersion: v2
+name: online-boutique
+description: A production-grade Helm chart for Google Microservices Demo (Online Boutique)
+type: application
+version: 0.1.0
+appVersion: "v0.10.1"
+keywords:
+  - microservices
+  - online-boutique
+  - kubernetes
+maintainers:
+  - name: DevOps Team

@@ -1,0 +1,3 @@
+# k8s/charts/online-boutique/values-dev.yaml
+loadgenerator:
+  enabled: true
