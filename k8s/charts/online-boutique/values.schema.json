@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Online Boutique Values Schema",
+  "type": "object",
+  "properties": {
+    "global": {
+      "type": "object",
+      "properties": {
+        "imageRegistry": { "type": "string" },
+        "defaultTag": { "type": "string" }
+      },
+      "required": ["imageRegistry", "defaultTag"]
+    },
+    "loadgenerator": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicas": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
