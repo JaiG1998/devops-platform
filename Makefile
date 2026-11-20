@@ -17,3 +17,7 @@ checkov:
 
 ci-local: fmt validate tflint checkov
 	@echo "All local CI checks passed successfully!"
+
+.PHONY: namespaces
+namespaces:
+	bash scripts/apply-namespaces.sh k8s/namespaces
