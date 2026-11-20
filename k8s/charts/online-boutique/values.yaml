@@ -297,7 +297,7 @@ services:
       - name: DISABLE_PROFILER
         value: "1"
       - name: GOMEMLIMIT
-        value: "100Mi"
+        value: "100MiB"
     resources:
       requests:
         cpu: 200m
