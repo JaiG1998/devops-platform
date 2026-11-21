@@ -21,6 +21,9 @@ spec:
         app.kubernetes.io/component: {{ $name }}
     spec:
       serviceAccountName: {{ $.Release.Name }}-sa
+      automountServiceAccountToken: {{ default $.Values.automountServiceAccountToken $service.automountServiceAccountToken }}
+      securityContext:
+        {{- toYaml (default $.Values.podSecurityContext $service.podSecurityContext) | nindent 8 }}
       containers:
         - name: {{ $name }}
           image: "{{ default $.Values.global.imageRegistry $service.image.registry }}/{{ $service.image.repository }}:{{ default $.Values.global.defaultTag $service.image.tag }}"
@@ -28,6 +31,8 @@ spec:
           ports:
             - containerPort: {{ $service.port }}
               name: http
+          securityContext:
+            {{- toYaml (default $.Values.securityContext $service.securityContext) | nindent 12 }}
           {{- with $service.env }}
           env:
             {{- toYaml . | nindent 12 }}
@@ -37,7 +42,10 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with $service.probes }}
-          {{- if .startup }}
+          {{- if .startupProbe }}
+          startupProbe:
+            {{- toYaml .startupProbe | nindent 12 }}
+          {{- else if .startup }}
           startupProbe:
             {{- if eq $name "frontend" }}
             httpGet:
@@ -47,7 +55,7 @@ spec:
             tcpSocket:
               port: {{ $service.port }}
             {{- else }}
-            grpc:
+            tcpSocket:
               port: {{ $service.port }}
             {{- end }}
             initialDelaySeconds: {{ .startup.initialDelaySeconds | default 10 }}
@@ -55,7 +63,10 @@ spec:
             failureThreshold: {{ .startup.failureThreshold | default 30 }}
             timeoutSeconds: {{ .startup.timeoutSeconds | default 1 }}
           {{- end }}
-          {{- if .liveness }}
+          {{- if .livenessProbe }}
+          livenessProbe:
+            {{- toYaml .livenessProbe | nindent 12 }}
+          {{- else if .liveness }}
           livenessProbe:
             {{- if eq $name "frontend" }}
             httpGet:
@@ -65,7 +76,7 @@ spec:
             tcpSocket:
               port: {{ $service.port }}
             {{- else }}
-            grpc:
+            tcpSocket:
               port: {{ $service.port }}
             {{- end }}
             initialDelaySeconds: {{ .liveness.initialDelaySeconds | default 10 }}
@@ -73,7 +84,10 @@ spec:
             failureThreshold: {{ .liveness.failureThreshold | default 3 }}
             timeoutSeconds: {{ .liveness.timeoutSeconds | default 1 }}
           {{- end }}
-          {{- if .readiness }}
+          {{- if .readinessProbe }}
+          readinessProbe:
+            {{- toYaml .readinessProbe | nindent 12 }}
+          {{- else if .readiness }}
           readinessProbe:
             {{- if eq $name "frontend" }}
             httpGet:
@@ -83,7 +97,7 @@ spec:
             tcpSocket:
               port: {{ $service.port }}
             {{- else }}
-            grpc:
+            tcpSocket:
               port: {{ $service.port }}
             {{- end }}
             initialDelaySeconds: {{ .readiness.initialDelaySeconds | default 10 }}
@@ -92,6 +106,18 @@ spec:
             timeoutSeconds: {{ .readiness.timeoutSeconds | default 1 }}
           {{- end }}
           {{- end }}
+          {{- if $service.emptyDirMounts }}
+          volumeMounts:
+            {{- range $mount := $service.emptyDirMounts }}
+            - name: empty-dir
+              mountPath: {{ $mount }}
+            {{- end }}
+          {{- end }}
+      {{- if $service.emptyDirMounts }}
+      volumes:
+        - name: empty-dir
+          emptyDir: {}
+      {{- end }}
 ---
 {{- end }}
 {{- end }}
@@ -117,8 +143,13 @@ spec:
         {{- include "online-boutique.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: loadgenerator
     spec:
+      automountServiceAccountToken: {{ default $.Values.automountServiceAccountToken .Values.loadgenerator.automountServiceAccountToken }}
+      securityContext:
+        {{- toYaml (default $.Values.podSecurityContext .Values.loadgenerator.podSecurityContext) | nindent 8 }}
       containers:
         - name: loadgenerator
+          securityContext:
+            {{- toYaml (default $.Values.securityContext .Values.loadgenerator.securityContext) | nindent 12 }}
           image: "{{ .Values.global.imageRegistry }}/{{ .Values.loadgenerator.image.repository }}:{{ default .Values.global.defaultTag .Values.loadgenerator.image.tag }}"
           imagePullPolicy: IfNotPresent
           env:
