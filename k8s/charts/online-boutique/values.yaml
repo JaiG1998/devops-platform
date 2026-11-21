@@ -1,10 +1,23 @@
-# k8s/charts/online-boutique/values.yaml
 global:
   imageRegistry: gcr.io/google-samples/microservices-demo
   defaultTag: v0.10.1
 
 nameOverride: ""
 fullnameOverride: ""
+
+podSecurityContext:
+  runAsNonRoot: false
+  seccompProfile:
+    type: RuntimeDefault
+
+automountServiceAccountToken: false
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: false
+  seccompProfile:
+    type: RuntimeDefault
+  readOnlyRootFilesystem: false
 
 services:
   emailservice:
@@ -13,24 +26,25 @@ services:
       repository: emailservice
       tag: ""
     port: 8080
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "8080"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 8080
         initialDelaySeconds: 10
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 8080
         initialDelaySeconds: 10
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 8080
         initialDelaySeconds: 10
         periodSeconds: 10
 
@@ -40,6 +54,8 @@ services:
       repository: checkoutservice
       tag: ""
     port: 5050
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "5050"
@@ -55,21 +71,20 @@ services:
         value: "payment-service:50051"
       - name: EMAIL_SERVICE_ADDR
         value: "email-service:8080"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 5050
         initialDelaySeconds: 10
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 5050
         initialDelaySeconds: 10
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 5050
         initialDelaySeconds: 10
         periodSeconds: 10
 
@@ -79,36 +94,39 @@ services:
       repository: recommendationservice
       tag: ""
     port: 8080
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "8080"
       - name: PRODUCT_CATALOG_SERVICE_ADDR
         value: "productcatalog-service:3550"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 220Mi
-      limits:
-        cpu: 500m
-        memory: 450Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 8080
         initialDelaySeconds: 10
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 8080
         initialDelaySeconds: 10
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 8080
         initialDelaySeconds: 10
         periodSeconds: 10
 
   frontend:
     enabled: true
-    serviceType: ClusterIP # Default ClusterIP so EKS creates no external LB by default
+    serviceType: ClusterIP
     image:
       repository: frontend
       tag: ""
     port: 8080
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "8080"
@@ -128,21 +146,24 @@ services:
         value: "adservice:9555"
       - name: SHOPPING_ASSISTANT_SERVICE_ADDR
         value: "shopping-assistant-service:8080"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
     probes:
-      startup:
-        initialDelaySeconds: 30
-        periodSeconds: 5
-      liveness:
+      startupProbe:
+        httpGet:
+          path: /
+          port: 8080
+        initialDelaySeconds: 60
+        periodSeconds: 10
+        failureThreshold: 30
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 8080
         initialDelaySeconds: 15
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 8080
         initialDelaySeconds: 15
         periodSeconds: 10
 
@@ -152,26 +173,27 @@ services:
       repository: paymentservice
       tag: ""
     port: 50051
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "50051"
       - name: DISABLE_PROFILER
         value: "1"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 50051
         initialDelaySeconds: 30
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 50051
         initialDelaySeconds: 15
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 50051
         initialDelaySeconds: 15
         periodSeconds: 10
 
@@ -181,26 +203,27 @@ services:
       repository: productcatalogservice
       tag: ""
     port: 3550
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "3550"
       - name: DISABLE_PROFILER
         value: "1"
-    resources:
-      requests:
-        cpu: 200m
-        memory: 128Mi
-      limits:
-        cpu: 400m
-        memory: 256Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 3550
         initialDelaySeconds: 30
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 3550
         initialDelaySeconds: 15
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 3550
         initialDelaySeconds: 15
         periodSeconds: 10
 
@@ -210,30 +233,30 @@ services:
       repository: cartservice
       tag: ""
     port: 7070
+    emptyDirMounts:
+      - /tmp
     env:
       - name: REDIS_ADDR
-        value: "redis-cart:6379"
+        value: "redis:6379"
       - name: PORT
         value: "7070"
-    resources:
-      requests:
-        cpu: 200m
-        memory: 64Mi
-      limits:
-        cpu: 300m
-        memory: 128Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 7070
         initialDelaySeconds: 10
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 7070
         initialDelaySeconds: 10
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 7070
         initialDelaySeconds: 10
         periodSeconds: 10
 
-  # Special Case: Redis for cart storage
   redis:
     enabled: true
     image:
@@ -241,18 +264,17 @@ services:
       repository: library/redis
       tag: 6.2-alpine
     port: 6379
-    resources:
-      requests:
-        cpu: 70m
-        memory: 64Mi
-      limits:
-        cpu: 125m
-        memory: 128Mi
+    emptyDirMounts:
+      - /data
     probes:
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 6379
         initialDelaySeconds: 5
         periodSeconds: 5
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 6379
         initialDelaySeconds: 5
         periodSeconds: 5
 
@@ -262,26 +284,27 @@ services:
       repository: currencyservice
       tag: ""
     port: 7000
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "7000"
       - name: DISABLE_PROFILER
         value: "1"
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 7000
         initialDelaySeconds: 30
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 7000
         initialDelaySeconds: 15
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 7000
         initialDelaySeconds: 15
         periodSeconds: 10
 
@@ -289,30 +312,32 @@ services:
     enabled: true
     image:
       repository: shippingservice
-      tag: "v0.9.0" # Downgrading to a slightly older version to test compatibility
+      tag: "v0.9.0"
     port: 50051
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "50051"
       - name: DISABLE_PROFILER
         value: "1"
       - name: GOMEMLIMIT
-        value: "100MiB"
-    resources:
-      requests:
-        cpu: 200m
-        memory: 128Mi
-      limits:
-        cpu: 400m
-        memory: 256Mi
+      - name: GOMEMLIMIT
+        value: "104857600"
     probes:
-      startup:
+      startupProbe:
+        tcpSocket:
+          port: 50051
         initialDelaySeconds: 30
         periodSeconds: 5
-      liveness:
+      livenessProbe:
+        tcpSocket:
+          port: 50051
         initialDelaySeconds: 15
         periodSeconds: 10
-      readiness:
+      readinessProbe:
+        tcpSocket:
+          port: 50051
         initialDelaySeconds: 15
         periodSeconds: 10
 
@@ -322,29 +347,29 @@ services:
       repository: adservice
       tag: ""
     port: 9555
+    emptyDirMounts:
+      - /tmp
     env:
       - name: PORT
         value: "9555"
-    resources:
-      requests:
-        cpu: 200m
-        memory: 180Mi
-      limits:
-        cpu: 300m
-        memory: 300Mi
     probes:
-      startup:
-        initialDelaySeconds: 30
+      startupProbe:
+        tcpSocket:
+          port: 9555
+        initialDelaySeconds: 10
         periodSeconds: 5
-        failureThreshold: 30
-      liveness:
-        initialDelaySeconds: 15
+        failureThreshold: 24
+      readinessProbe:
+        tcpSocket:
+          port: 9555
+        initialDelaySeconds: 10
         periodSeconds: 10
-      readiness:
-        initialDelaySeconds: 15
-        periodSeconds: 10
+      livenessProbe:
+        tcpSocket:
+          port: 9555
+        initialDelaySeconds: 10
+        periodSeconds: 15
 
-# Optional Load Generator (Disabled by default, enabled in dev)
 loadgenerator:
   enabled: false
   image:
