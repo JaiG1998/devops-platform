@@ -9,7 +9,7 @@ metadata:
     {{- include "online-boutique.labels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ $name }}
 spec:
-  replicas: 1
+  replicas: {{ default 1 $service.replicaCount }}
   selector:
     matchLabels:
       {{- include "online-boutique.selectorLabels" $ | nindent 6 }}
@@ -20,6 +20,18 @@ spec:
         {{- include "online-boutique.selectorLabels" $ | nindent 8 }}
         app.kubernetes.io/component: {{ $name }}
     spec:
+      {{- $tsc := default $.Values.topologySpreadConstraints $service.topologySpreadConstraints }}
+      {{- if $tsc }}
+      topologySpreadConstraints:
+        {{- range $constraint := $tsc }}
+        - maxSkew: {{ $constraint.maxSkew | default 1 }}
+          topologyKey: {{ $constraint.topologyKey }}
+          whenUnsatisfiable: {{ $constraint.whenUnsatisfiable | default "ScheduleAnyway" }}
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: {{ $name }}
+        {{- end }}
+      {{- end }}
       serviceAccountName: {{ $.Release.Name }}-sa
       automountServiceAccountToken: {{ default $.Values.automountServiceAccountToken $service.automountServiceAccountToken }}
       securityContext:
