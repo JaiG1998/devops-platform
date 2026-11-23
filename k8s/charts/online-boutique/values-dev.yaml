@@ -1,5 +1,6 @@
 services:
   emailservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -8,6 +9,7 @@ services:
         cpu: 200m
         memory: 128Mi
   checkoutservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -16,6 +18,7 @@ services:
         cpu: 200m
         memory: 128Mi
   recommendationservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -24,6 +27,7 @@ services:
         cpu: 500m
         memory: 450Mi
   frontend:
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -32,6 +36,7 @@ services:
         cpu: 200m
         memory: 128Mi
   paymentservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -40,6 +45,7 @@ services:
         cpu: 200m
         memory: 128Mi
   productcatalogservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 200m
@@ -48,6 +54,7 @@ services:
         cpu: 400m
         memory: 256Mi
   cartservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 200m
@@ -56,6 +63,7 @@ services:
         cpu: 300m
         memory: 128Mi
   redis:
+    replicaCount: 1
     resources:
       requests:
         cpu: 70m
@@ -64,6 +72,7 @@ services:
         cpu: 125m
         memory: 128Mi
   currencyservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -72,6 +81,7 @@ services:
         cpu: 200m
         memory: 128Mi
   shippingservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 200m
@@ -80,6 +90,7 @@ services:
         cpu: 400m
         memory: 256Mi
   adservice:
+    replicaCount: 1
     resources:
       requests:
         cpu: 200m

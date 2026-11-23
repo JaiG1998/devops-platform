@@ -2,6 +2,14 @@ global:
   imageRegistry: gcr.io/google-samples/microservices-demo
   defaultTag: v0.10.1
 
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+
 nameOverride: ""
 fullnameOverride: ""
 
@@ -22,6 +30,7 @@ securityContext:
 services:
   emailservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: emailservice
       tag: ""
@@ -50,6 +59,7 @@ services:
 
   checkoutservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: checkoutservice
       tag: ""
@@ -90,6 +100,7 @@ services:
 
   recommendationservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: recommendationservice
       tag: ""
@@ -120,6 +131,7 @@ services:
 
   frontend:
     enabled: true
+    replicaCount: 1
     serviceType: ClusterIP
     image:
       repository: frontend
@@ -169,6 +181,7 @@ services:
 
   paymentservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: paymentservice
       tag: ""
@@ -199,6 +212,7 @@ services:
 
   productcatalogservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: productcatalogservice
       tag: ""
@@ -229,6 +243,7 @@ services:
 
   cartservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: cartservice
       tag: ""
@@ -259,6 +274,7 @@ services:
 
   redis:
     enabled: true
+    replicaCount: 1
     image:
       registry: "docker.io"
       repository: library/redis
@@ -280,6 +296,7 @@ services:
 
   currencyservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: currencyservice
       tag: ""
@@ -310,6 +327,7 @@ services:
 
   shippingservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: shippingservice
       tag: "v0.9.0"
@@ -321,7 +339,6 @@ services:
         value: "50051"
       - name: DISABLE_PROFILER
         value: "1"
-      - name: GOMEMLIMIT
       - name: GOMEMLIMIT
         value: "104857600"
     probes:
@@ -343,6 +360,7 @@ services:
 
   adservice:
     enabled: true
+    replicaCount: 1
     image:
       repository: adservice
       tag: ""

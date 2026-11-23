@@ -1,0 +1,20 @@
+{{- range $name, $service := .Values.services }}
+{{- $enabled := default true $service.enabled }}
+{{- $replicas := default 1 $service.replicaCount }}
+{{- if and $enabled (gt ($replicas | int) 1) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  labels:
+    {{- include "online-boutique.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  minAvailable: {{ default 1 ($service.pdb).minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "online-boutique.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $name }}
+---
+{{- end }}
+{{- end }}
