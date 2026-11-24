@@ -1,0 +1,14 @@
+# k8s/platform/quota-prod.yaml (sized for production workloads, ~1.9x CPU / ~3x memory headroom)
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: app-resource-quota
+spec:
+  hard:
+    requests.cpu: "9000m"
+    requests.memory: "9500Mi"
+    limits.cpu: "18000m"
+    limits.memory: "19500Mi"
+    pods: "35"
+    services: "25"
+    secrets: "30"
