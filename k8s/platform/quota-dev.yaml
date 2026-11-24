@@ -1,0 +1,14 @@
+# k8s/platform/quota-dev.yaml (example with 1.35x headroom)
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: app-resource-quota
+spec:
+  hard:
+    requests.cpu: "2000m"
+    requests.memory: "1500Mi"
+    limits.cpu: "5400m"
+    limits.memory: "6480Mi"
+    pods: "25"
+    services: "20"
+    secrets: "20"
