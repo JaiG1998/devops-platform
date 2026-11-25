@@ -17,3 +17,4 @@ add a line to the index below in the same PR.
 | [0004](0004-eks-architecture.md) | EKS Architecture (Terraform, EKS, GitHub Actions) | Accepted |
 | [0005](0005-cicd-pipeline-strategy.md) | CICD Pipeline Strategy (Terraform, EKS, GitHub Actions) | Accepted |
 | [0006](0006-helm-kubernetes-deployments.md) | Kubernetes Deployments (Kubernetes) | Accepted |
+| [0007](0007-rbac-model.md) | RBAC model — per-service ServiceAccounts + human roles via EKS access entries | Accepted |

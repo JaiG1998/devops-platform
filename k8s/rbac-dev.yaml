@@ -1,0 +1,63 @@
+# viewer Role: read-only (get/list/watch pods, deployments, services, configmaps; get pods/log)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: online-boutique-viewer
+  namespace: online-boutique-dev
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/component: rbac
+    rbac.authorization.kubernetes.io/role: viewer
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "replicationcontrollers", "namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]  # required to read logs via `kubectl logs` (read verb on pods)
+
+---
+# developer Role: deploy/debug in app namespace, no secret reads
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: online-boutique-developer
+  namespace: online-boutique-dev
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/component: rbac
+    rbac.authorization.kubernetes.io/role: developer
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "replicationcontrollers"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods/portforward"]
+  verbs: ["create"]
+
+---
+# admin ClusterRole: break-glass cluster-admin (cluster-scoped)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: online-boutique-admin
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/component: rbac
+    rbac.authorization.kubernetes.io/role: admin
+rules:
+- apiGroups: [""]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+  verbs: ["*"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["create", "list", "watch", "get", "update", "patch", "delete"]

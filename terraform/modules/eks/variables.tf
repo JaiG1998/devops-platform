@@ -134,6 +134,18 @@ variable "admin_role_arns" {
   default     = []
 }
 
+variable "viewer_role_arns" {
+  description = "List of IAM Role ARNs granted the 'online-boutique-viewers' Kubernetes group through EKS Access Entries. Each role maps to the viewer Role (read-only access) in app namespaces."
+  type        = list(string)
+  default     = []
+}
+
+variable "developer_role_arns" {
+  description = "List of IAM Role ARNs granted the 'online-boutique-developers' Kubernetes group through EKS Access Entries. Each role maps to the developer Role (deploy/debug) in app namespaces."
+  type        = list(string)
+  default     = []
+}
+
 # --- Logging & Compliance ---
 
 variable "enabled_log_types" {
