@@ -44,6 +44,8 @@ module "eks_dev" {
   endpoint_public_access = true
   public_access_cidrs    = ["0.0.0.0/0"] # Update with your specific IP (/32) for strict access
   admin_role_arns        = [data.aws_caller_identity.current.arn]
+  viewer_role_arns       = []
+  developer_role_arns    = []
 
   # Cost-Optimized Managed Node Group Configuration
   node_capacity_type  = "SPOT"

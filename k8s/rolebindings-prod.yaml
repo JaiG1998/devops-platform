@@ -1,0 +1,57 @@
+# RoleBinding: bind online-boutique-viewers group to online-boutique-viewer Role in prod namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: online-boutique-viewers
+  namespace: online-boutique-prod
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/component: rbac
+    rbac.authorization.kubernetes.io/role: viewer
+subjects:
+- kind: Group
+  name: online-boutique-viewers
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: online-boutique-viewer
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# RoleBinding: bind online-boutique-developers group to online-boutique-developer Role in prod namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: online-boutique-developers
+  namespace: online-boutique-prod
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/component: rbac
+    rbac.authorization.kubernetes.io/role: developer
+subjects:
+- kind: Group
+  name: online-boutique-developers
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: online-boutique-developer
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ClusterRoleBinding: bind online-boutique-admins group to online-boutique-admin ClusterRole cluster-wide
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: online-boutique-admins
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/component: rbac
+    rbac.authorization.kubernetes.io/role: admin
+subjects:
+- kind: Group
+  name: online-boutique-admins
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: online-boutique-admin
+  apiGroup: rbac.authorization.k8s.io

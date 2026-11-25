@@ -20,7 +20,7 @@ spec:
         {{- include "online-boutique.selectorLabels" $ | nindent 8 }}
         app.kubernetes.io/component: {{ $name }}
     spec:
-      {{- $tsc := default $.Values.topologySpreadConstraints $service.topologySpreadConstraints }}
+      {{- $tsc := default (get $.Values "topologySpreadConstraints") (get $service "topologySpreadConstraints") }}
       {{- if $tsc }}
       topologySpreadConstraints:
         {{- range $constraint := $tsc }}
@@ -32,7 +32,7 @@ spec:
               app.kubernetes.io/component: {{ $name }}
         {{- end }}
       {{- end }}
-      serviceAccountName: {{ $.Release.Name }}-sa
+      serviceAccountName: {{ $name }}-sa
       automountServiceAccountToken: {{ default $.Values.automountServiceAccountToken $service.automountServiceAccountToken }}
       securityContext:
         {{- toYaml (default $.Values.podSecurityContext $service.podSecurityContext) | nindent 8 }}
@@ -155,13 +155,13 @@ spec:
         {{- include "online-boutique.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: loadgenerator
     spec:
-      automountServiceAccountToken: {{ default $.Values.automountServiceAccountToken .Values.loadgenerator.automountServiceAccountToken }}
+      automountServiceAccountToken: {{ default (get $.Values "automountServiceAccountToken") (get .Values.loadgenerator "automountServiceAccountToken") }}
       securityContext:
-        {{- toYaml (default $.Values.podSecurityContext .Values.loadgenerator.podSecurityContext) | nindent 8 }}
+        {{- toYaml (default (get $.Values "podSecurityContext") (get .Values.loadgenerator "podSecurityContext")) | nindent 8 }}
       containers:
         - name: loadgenerator
           securityContext:
-            {{- toYaml (default $.Values.securityContext .Values.loadgenerator.securityContext) | nindent 12 }}
+            {{- toYaml (default (get $.Values "securityContext") (get .Values.loadgenerator "securityContext")) | nindent 12 }}
           image: "{{ .Values.global.imageRegistry }}/{{ .Values.loadgenerator.image.repository }}:{{ default .Values.global.defaultTag .Values.loadgenerator.image.tag }}"
           imagePullPolicy: IfNotPresent
           env:
