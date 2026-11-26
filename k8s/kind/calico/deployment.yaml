@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calico-node
+  namespace: kube-system
+  labels:
+    k8s-app: calico-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: calico-node
+  template:
+    metadata:
+      labels:
+        k8s-app: calico-node
+      annotations:
+        # This prevents the deployment from being scaled up/down accidentally
+        prometheus.io/scrape: "false"
+    spec:
+      serviceAccountName: calico-node
+      containers:
+      - name: calico-node
+        image: calico/node:v3.25.0
+        env:
+        - name: KUBERNETES_MASTER
+          value: "https://172.18.0.1:443"
+        - name: CALICO_NETWORKPOLICY_ENABLED
+          value: "true"
+        - name: CALICO_IPV4POOL_CIDR
+          value: "10.244.0.0/16"
+        - name: WAIT_FOR_NETWORK
+          value: "true"
+        - name: CALICO_DISABLE_FILE_LOGGING
+          value: "true"
+        # Kind-specific: enable host-level features
+        - name: CALICO_NETWORK_AUTOSPANNABLE
+          value: "true"
+        securityContext:
+          privileged: true
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+          requests:
+            cpu: "0.1"
+            memory: "128Mi"
+        volumeMounts:
+        - name: var-run-docker-sock
+          mountPath: /var/run/docker.sock
+        - name: lib-modules
+          mountPath: /lib/modules
+        - name: calico-state
+          mountPath: /var/calico/state
+      volumes:
+      - name: var-run-docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: lib-modules
+        hostPath:
+          path: /lib/modules
+      - name: calico-state
+        hostPath:
+          path: /var/calico/state

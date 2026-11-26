@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: calico-config
+  namespace: calico-system
+data:
+  # Calico networking configuration
+  calico_networking_v1: |
+    {
+      "cidr": "10.244.0.0/16",
+      "mtu": 1440,
+      "policy": {
+        "enabled": "true",
+        "defaultDeny": "false"
+      },
+      "networking": {
+        "serviceClusterIPRange": "10.96.0.0/12"
+      },
+      "securityGroup": false,
+      "veth": {
+        "mtu": 1440
+      }
+    }

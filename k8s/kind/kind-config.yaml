@@ -7,4 +7,10 @@ nodes:
     image: kindest/node:v1.30.0
   - role: worker
     image: kindest/node:v1.30.0
-    
+
+# After cluster creation, run the Calico installation script to:
+# 1. Disable the default kubenet CNI
+# 2. Install Calico with network policy support
+# 3. Verify NetworkPolicy enforcement
+#
+# See scripts/install-calico-kind.sh for the full procedure.
