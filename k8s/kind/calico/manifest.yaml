@@ -1,0 +1,14 @@
+# Kind cluster Calico supplementary manifests
+#
+# The network policy is enabled via:
+# 1. CALICO_NETWORKPOLICY_ENABLED=true in the Calico Node Deployment (k8s/kind/calico/deployment.yaml)
+# 2. calico-config ConfigMap (k8s/kind/calico/configmap.yaml) with networking configuration
+#
+# Installation order:
+#   kubectl apply -f k8s/kind/calico/namespace.yaml
+#   kubectl apply -f k8s/kind/calico/rbac.yaml
+#   kubectl apply -f k8s/kind/calico/configmap.yaml
+#   kubectl apply -f k8s/kind/calico/deployment.yaml
+#
+# The NodePool CRD is not used on kind - the Deployment env var Calico_NETWORKPOLICY_ENABLED=true
+# is sufficient to enable network policy support.

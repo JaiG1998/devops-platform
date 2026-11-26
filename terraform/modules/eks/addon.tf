@@ -1,11 +1,18 @@
 # --- 1. EKS Core Add-ons ---
 
 # VPC CNI Add-on (Manages pod IP allocation and network interfaces)
+# Network policy enforcement is enabled via the add-on configuration.
+# Requires Kubernetes >= 1.24 and AWS VPC CNI >= 1.11.0
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = "vpc-cni"
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
+
+  # Enable network policy support in the VPC CNI add-on
+  configuration_values = jsonencode({
+    enableNetworkPolicy = true
+  })
 
   tags = var.tags
 }

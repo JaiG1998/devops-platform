@@ -63,6 +63,24 @@ Follow these exact steps to run the complete microservices stack locally inside 
 * [kubectl](https://kubernetes.io/docs/tasks/tools/)
 * [kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
 
+### Network Policy Enforcement for Kind
+The default CNI in kind (kubenet) does NOT enforce NetworkPolicies. After creating the cluster, you must install Calico with network policy support:
+
+```bash
+# Create namespaces for Calico
+kubectl create namespace calico-system
+kubectl create namespace calico-apps
+kubectl create namespace calico-logging
+
+# Apply Calico RBAC and configuration
+kubectl apply -f k8s/kind/calico/
+
+# Verify Calico is running and enforcing NetworkPolicies
+kubectl get pods -n calico-system -l k8s-app=calico-node
+```
+
+**Important**: Without Calico (or another CNI that enforces NetworkPolicies), NetworkPolicy objects will be accepted but have no effect - traffic will flow freely regardless of policy rules.
+
 ---
 
 ### Step 1: Create the Local Kubernetes Cluster
