@@ -107,7 +107,7 @@ jobs:
         run: |
           KUBE_LINTER_VERSION="0.7.0"
           # Download kube-linter from GitHub releases
-          wget "https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter_${KUBE_LINTER_VERSION}_Linux_x86_64.tar.gz" -O kube-linter.tar.gz
+          wget "https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter-linux.tar.gz" -O kube-linter.tar.gz
           tar -xzf kube-linter.tar.gz
           chmod +x kube-linter
           mv kube-linter /usr/local/bin/
