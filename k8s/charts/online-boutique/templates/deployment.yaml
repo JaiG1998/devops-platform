@@ -32,6 +32,21 @@ spec:
               app.kubernetes.io/component: {{ $name }}
         {{- end }}
       {{- end }}
+      {{- $svcReplicaCount := default 1 $service.replicaCount -}}
+      {{- if gt (int $svcReplicaCount) 1 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - {{ $name }}
+{{- end }}
       serviceAccountName: {{ $name }}-sa
       automountServiceAccountToken: {{ default $.Values.automountServiceAccountToken $service.automountServiceAccountToken }}
       securityContext:
@@ -70,52 +85,23 @@ spec:
             tcpSocket:
               port: {{ $service.port }}
             {{- end }}
-            initialDelaySeconds: {{ .startup.initialDelaySeconds | default 10 }}
-            periodSeconds: {{ .startup.periodSeconds | default 5 }}
-            failureThreshold: {{ .startup.failureThreshold | default 30 }}
-            timeoutSeconds: {{ .startup.timeoutSeconds | default 1 }}
+          {{- else if .startup }}
+          startupProbe:
+            {{- toYaml .startup | nindent 12 }}
           {{- end }}
           {{- if .livenessProbe }}
           livenessProbe:
             {{- toYaml .livenessProbe | nindent 12 }}
           {{- else if .liveness }}
           livenessProbe:
-            {{- if eq $name "frontend" }}
-            httpGet:
-              path: /
-              port: {{ $service.port }}
-            {{- else if eq $name "redis" }}
-            tcpSocket:
-              port: {{ $service.port }}
-            {{- else }}
-            tcpSocket:
-              port: {{ $service.port }}
-            {{- end }}
-            initialDelaySeconds: {{ .liveness.initialDelaySeconds | default 10 }}
-            periodSeconds: {{ .liveness.periodSeconds | default 10 }}
-            failureThreshold: {{ .liveness.failureThreshold | default 3 }}
-            timeoutSeconds: {{ .liveness.timeoutSeconds | default 1 }}
+            {{- toYaml .liveness | nindent 12 }}
           {{- end }}
           {{- if .readinessProbe }}
           readinessProbe:
             {{- toYaml .readinessProbe | nindent 12 }}
           {{- else if .readiness }}
           readinessProbe:
-            {{- if eq $name "frontend" }}
-            httpGet:
-              path: /
-              port: {{ $service.port }}
-            {{- else if eq $name "redis" }}
-            tcpSocket:
-              port: {{ $service.port }}
-            {{- else }}
-            tcpSocket:
-              port: {{ $service.port }}
-            {{- end }}
-            initialDelaySeconds: {{ .readiness.initialDelaySeconds | default 10 }}
-            periodSeconds: {{ .readiness.periodSeconds | default 10 }}
-            failureThreshold: {{ .readiness.failureThreshold | default 3 }}
-            timeoutSeconds: {{ .readiness.timeoutSeconds | default 1 }}
+            {{- toYaml .readiness | nindent 12 }}
           {{- end }}
           {{- end }}
           {{- if $service.emptyDirMounts }}
@@ -125,50 +111,11 @@ spec:
               mountPath: {{ $mount }}
             {{- end }}
           {{- end }}
-      {{- if $service.emptyDirMounts }}
+{{- if $service.emptyDirMounts }}
       volumes:
         - name: empty-dir
           emptyDir: {}
       {{- end }}
 ---
 {{- end }}
-{{- end }}
-
-{{/* Optional Load Generator Deployment */}}
-{{- if .Values.loadgenerator.enabled }}
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: loadgenerator
-  labels:
-    {{- include "online-boutique.labels" . | nindent 4 }}
-    app.kubernetes.io/component: loadgenerator
-spec:
-  replicas: {{ .Values.loadgenerator.replicas }}
-  selector:
-    matchLabels:
-      {{- include "online-boutique.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: loadgenerator
-  template:
-    metadata:
-      labels:
-        {{- include "online-boutique.selectorLabels" . | nindent 8 }}
-        app.kubernetes.io/component: loadgenerator
-    spec:
-      automountServiceAccountToken: {{ default (get $.Values "automountServiceAccountToken") (get .Values.loadgenerator "automountServiceAccountToken") }}
-      securityContext:
-        {{- toYaml (default (get $.Values "podSecurityContext") (get .Values.loadgenerator "podSecurityContext")) | nindent 8 }}
-      containers:
-        - name: loadgenerator
-          securityContext:
-            {{- toYaml (default (get $.Values "securityContext") (get .Values.loadgenerator "securityContext")) | nindent 12 }}
-          image: "{{ .Values.global.imageRegistry }}/{{ .Values.loadgenerator.image.repository }}:{{ default .Values.global.defaultTag .Values.loadgenerator.image.tag }}"
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: FRONTEND_ADDR
-              value: "frontend:8080"
-            - name: USERS
-              value: "10"
-          resources:
-            {{- toYaml .Values.loadgenerator.resources | nindent 12 }}
 {{- end }}

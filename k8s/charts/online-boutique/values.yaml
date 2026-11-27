@@ -14,7 +14,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 podSecurityContext:
-  runAsNonRoot: false
+  runAsNonRoot: true
   seccompProfile:
     type: RuntimeDefault
 
@@ -22,10 +22,11 @@ automountServiceAccountToken: false
 
 securityContext:
   allowPrivilegeEscalation: false
-  runAsNonRoot: false
+  runAsNonRoot: true
+  runAsUser: 1000
   seccompProfile:
     type: RuntimeDefault
-  readOnlyRootFilesystem: false
+  readOnlyRootFilesystem: true
 
 services:
   emailservice:
@@ -139,6 +140,8 @@ services:
     port: 8080
     emptyDirMounts:
       - /tmp
+      - /var/run
+      - /var/log
     env:
       - name: PORT
         value: "8080"
@@ -282,6 +285,10 @@ services:
     port: 6379
     emptyDirMounts:
       - /data
+    securityContext:
+      runAsNonRoot: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: false
     probes:
       livenessProbe:
         tcpSocket:

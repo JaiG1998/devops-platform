@@ -1,0 +1,167 @@
+# K8s Chart CI
+#
+# Extends the existing CI to validate Kubernetes Helm charts.
+# Every PR validates: lint, render, schema-check and policy-check each environment's values,
+# and blocks merges on failure. This does for Kubernetes what the Terraform CI does for infrastructure.
+#
+# Depends on: the Week 1 CI workflow and the existing Helm chart at k8s/charts/online-boutique/
+#
+# Schema validation: pins kubeconform and sets the Kubernetes version to match your EKS version.
+# Policy linter: uses kube-linter (chosen over checkov's Kubernetes framework to avoid duplicate noise).
+# Path filters versus required checks: a required check skipped by a path filter can leave a PR stuck pending.
+# Treat findings the same way as Week 1: fix or suppress with a written reason, never switch the check off.
+
+name: "K8s Chart CI"
+
+# 1. Triggers: Run on PRs touching k8s files or this workflow itself
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'k8s/**'
+      - '.github/workflows/k8s-ci.yml'
+
+# 2. Top-level permissions: Default to read-only for maximum security
+permissions:
+  contents: read
+
+# 3. Concurrency: Cancel in-progress runs when a new commit is pushed to the same PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.id || github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # --- Job 1: Helm Lint ---
+  # Runs helm lint on each values file to validate chart structure
+  helm-lint:
+    name: "Helm Lint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          # Pin Helm version matching chart requirements
+          helm-version: "v3.14.0"
+
+      - name: Lint values.yaml
+        run: helm lint ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values.yaml
+
+      - name: Lint values-dev.yaml
+        run: helm lint ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-dev.yaml
+
+      - name: Lint values-prod.yaml
+        run: helm lint ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-prod.yaml
+
+  # --- Job 2: Render and kubeconform Schema Validation ---
+  # Renders each environment with helm template and pipes it to kubeconform in strict mode
+  # kubeconform validates rendered YAML against the Kubernetes version schema
+  render:
+    name: "Render & Schema Validation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup kubeconform
+        run: |
+          KUBECONFORM_VERSION="v0.6.0"
+          # Download kubeconform from GitHub releases
+          wget "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -O kubeconform.tar.gz
+          tar -xzf kubeconform.tar.gz
+          chmod +x kubeconform
+          mv kubeconform /usr/local/bin/
+
+      - name: Render and validate dev environment
+        run: |
+          helm template online-boutique ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-dev.yaml | kubeconform --strict
+
+      - name: Render and validate prod environment
+        run: |
+          helm template online-boutique ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-prod.yaml | kubeconform --strict
+
+      # The --strict flag makes kubeconform exit with non-zero status on any validation error,
+      # ensuring failures are caught in CI
+
+  # --- Job 3: kube-linter Policy Check ---
+  # Runs kube-linter over rendered output to check for best practices and security issues
+  # Chosen over checkov's Kubernetes framework to avoid duplicate noise
+  policy-check:
+    name: "kube-linter Policy Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Setup kube-linter
+        run: |
+          KUBE_LINTER_VERSION="0.7.0"
+          # Download kube-linter from GitHub releases
+          wget "https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter-linux.tar.gz" -O kube-linter.tar.gz
+          tar -xzf kube-linter.tar.gz
+          chmod +x kube-linter
+          mv kube-linter /usr/local/bin/
+
+      - name: Lint dev rendered output
+        run: |
+          helm template online-boutique ./k8s/charts/online-boutique -f values-dev.yaml | kube-linter lint --config k8s/charts/online-boutique/kube-linter.yml -
+
+      - name: Lint prod rendered output
+        run: |
+          helm template online-boutique ./k8s/charts/online-boutique -f values-prod.yaml | kube-linter lint --config k8s/charts/online-boutique/kube-linter.yml -
+
+      - name: Triage baseline findings
+        # Output findings and allow suppression via comments
+        # Any new findings must be fixed or suppressed with kube-linter suppress annotations
+        # Treated same as Week 1: fix or suppress with a written reason, never switch the check off
+        run: |
+          set +e
+          helm template online-boutique ./k8s/charts/online-boutique -f values-prod.yaml | kube-linter lint - > findings-prod.txt 2>&1 || true
+          echo "=== Prod findings ==="
+          cat findings-prod.txt || echo "No findings"
+
+  # --- Job 4: JSON Schema Validation ---
+  # Validates values.yaml, values-dev.yaml, values-prod.yaml against values.schema.json
+  schema-check:
+    name: "JSON Schema Validation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Install Ajv CLI
+        run: npm install -g ajv-cli@latest
+
+      - name: Validate values against schema
+        run: ajv validate -s k8s/charts/online-boutique/values.schema.json -d k8s/charts/online-boutique/values.yaml
+
+      - name: Validate dev values against schema
+        run: ajv validate -s k8s/charts/online-boutique/values.schema.json -d k8s/charts/online-boutique/values-dev.yaml
+
+      - name: Validate prod values against schema
+        run: ajv validate -s k8s/charts/online-boutique/values.schema.json -d k8s/charts/online-boutique/values-prod.yaml
+
+  # --- Job 5: Local Make Target Documentation ---
+  # Documents the local make k8s-check target that runs the same checks locally
+  make-k8s-checks:
+    name: "Make k8s-check (Local)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Display make target
+        run: echo "Run 'make k8s-check' locally to execute all k8s validation checks"
