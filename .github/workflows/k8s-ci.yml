@@ -50,13 +50,13 @@ jobs:
           helm-version: "v3.14.0"
 
       - name: Lint values.yaml
-        run: helm lint ./k8s/charts/online-boutique -f values.yaml
+        run: helm lint ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values.yaml
 
       - name: Lint values-dev.yaml
-        run: helm lint ./k8s/charts/online-boutique -f values-dev.yaml
+        run: helm lint ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-dev.yaml
 
       - name: Lint values-prod.yaml
-        run: helm lint ./k8s/charts/online-boutique -f values-prod.yaml
+        run: helm lint ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-prod.yaml
 
   # --- Job 2: Render and kubeconform Schema Validation ---
   # Renders each environment with helm template and pipes it to kubeconform in strict mode
