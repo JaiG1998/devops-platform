@@ -111,7 +111,6 @@ jobs:
           tar -xzf kube-linter.tar.gz
           chmod +x kube-linter
           mv kube-linter /usr/local/bin/
-          kube-linter --version
 
       - name: Lint dev rendered output
         run: |
