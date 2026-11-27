@@ -74,7 +74,7 @@ jobs:
         run: |
           KUBECONFORM_VERSION="v0.6.0"
           # Download kubeconform from GitHub releases
-          wget "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64-${KUBECONFORM_VERSION}.tar.gz" -O kubeconform.tar.gz
+          wget "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -O kubeconform.tar.gz
           tar -xzf kubeconform.tar.gz
           chmod +x kubeconform
           mv kubeconform /usr/local/bin/
@@ -107,7 +107,7 @@ jobs:
         run: |
           KUBE_LINTER_VERSION="0.7.0"
           # Download kube-linter from GitHub releases
-          wget "https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter_${KUBE_LINTER_VERSION}_linux_x86_64.tar.gz" -O kube-linter.tar.gz
+          wget "https://github.com/stackrox/kube-linter/releases/download/v${KUBE_LINTER_VERSION}/kube-linter_${KUBE_LINTER_VERSION}_Linux_x86_64.tar.gz" -O kube-linter.tar.gz
           tar -xzf kube-linter.tar.gz
           chmod +x kube-linter
           mv kube-linter /usr/local/bin/
@@ -146,13 +146,13 @@ jobs:
         run: npm install -g ajv-cli@latest
 
       - name: Validate values against schema
-        run: ajv validate -s values.schema.json -d values.yaml
+        run: ajv validate -s k8s/charts/online-boutique/values.schema.json -d k8s/charts/online-boutique/values.yaml
 
       - name: Validate dev values against schema
-        run: ajv validate -s values.schema.json -d values-dev.yaml
+        run: ajv validate -s k8s/charts/online-boutique/values.schema.json -d k8s/charts/online-boutique/values-dev.yaml
 
       - name: Validate prod values against schema
-        run: ajv validate -s values.schema.json -d values-prod.yaml
+        run: ajv validate -s k8s/charts/online-boutique/values.schema.json -d k8s/charts/online-boutique/values-prod.yaml
 
   # --- Job 5: Local Make Target Documentation ---
   # Documents the local make k8s-check target that runs the same checks locally
