@@ -78,15 +78,14 @@ jobs:
           tar -xzf kubeconform.tar.gz
           chmod +x kubeconform
           mv kubeconform /usr/local/bin/
-          kubeconform --version
 
       - name: Render and validate dev environment
         run: |
-          helm template online-boutique ./k8s/charts/online-boutique -f values-dev.yaml | kubeconform --strict
+          helm template online-boutique ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-dev.yaml | kubeconform --strict
 
       - name: Render and validate prod environment
         run: |
-          helm template online-boutique ./k8s/charts/online-boutique -f values-prod.yaml | kubeconform --strict
+          helm template online-boutique ./k8s/charts/online-boutique -f ./k8s/charts/online-boutique/values-prod.yaml | kubeconform --strict
 
       # The --strict flag makes kubeconform exit with non-zero status on any validation error,
       # ensuring failures are caught in CI
