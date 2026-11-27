@@ -15,6 +15,7 @@ spec:
     matchLabels:
       {{- include "online-boutique.selectorLabels" $ | nindent 6 }}
       app.kubernetes.io/component: {{ $name }}
+  unhealthyPodEvictionPolicy: AlwaysAllow
 ---
 {{- end }}
 {{- end }}

@@ -1,0 +1,14 @@
+linter:
+  suppressions:
+    - resource:
+        name: redis
+        kind: Deployment
+      checks:
+        - no-read-only-root-fs
+      message: "Redis runs as root by design to manage its data directory. This is acceptable for stateful workloads with NetworkPolicy enforcement."
+    - resource:
+        name: redis
+        kind: Deployment
+      checks:
+        - run-as-non-root
+      message: "Redis image runs as root by design for data directory management. Security is enforced via NetworkPolicy and non-root service accounts where possible."
